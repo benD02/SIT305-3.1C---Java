@@ -1,7 +1,9 @@
 package com.example.a31c_java;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -9,6 +11,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.example.a31c_java.ResultsActivity;
 
@@ -19,8 +22,6 @@ public class QuizActivity extends AppCompatActivity {
 
     private String userName;
     private TextView questionTextView;
-    private RadioGroup optionsRadioGroup;
-    private Button submitButton;
     private ProgressBar progressBar;
 
     private List<String> questions;
@@ -29,6 +30,8 @@ public class QuizActivity extends AppCompatActivity {
 
     private int currentQuestionIndex = 0;
     private int correctAnswers = 0;
+    private Button option1Button, option2Button, option3Button, option4Button;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,30 +56,43 @@ public class QuizActivity extends AppCompatActivity {
         answers = Arrays.asList("25", "C#", "Budapest", "O(1)", "10");
 
         questionTextView = findViewById(R.id.questionTextView);
-        optionsRadioGroup = findViewById(R.id.optionsRadioGroup);
-        submitButton = findViewById(R.id.submitButton);
         progressBar = findViewById(R.id.progressBar);
 
         displayQuestion();
 
-        submitButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                checkAnswer();
-            }
-        });
+
+
+        setButtonListeners();
+
+
     }
 
     private void displayQuestion() {
+
+        option1Button = findViewById(R.id.option1Button);
+        option2Button = findViewById(R.id.option2Button);
+        option3Button = findViewById(R.id.option3Button);
+        option4Button = findViewById(R.id.option4Button);
+
         if (currentQuestionIndex < questions.size()) {
             String question = questions.get(currentQuestionIndex);
             List<String> questionOptions = options.get(currentQuestionIndex);
 
             questionTextView.setText(question);
-            for (int i = 0; i < questionOptions.size(); i++) {
-                RadioButton radioButton = (RadioButton) optionsRadioGroup.getChildAt(i);
-                radioButton.setText(questionOptions.get(i));
-            }
+            option1Button.setText(questionOptions.get(0));
+            option2Button.setText(questionOptions.get(1));
+            option3Button.setText(questionOptions.get(2));
+            option4Button.setText(questionOptions.get(3));
+
+            option1Button.setBackgroundColor(Color.LTGRAY); // Resetting color
+            option2Button.setBackgroundColor(Color.LTGRAY);
+            option3Button.setBackgroundColor(Color.LTGRAY);
+            option4Button.setBackgroundColor(Color.LTGRAY);
+
+            option1Button.setEnabled(true); // Re-enabling the buttons
+            option2Button.setEnabled(true);
+            option3Button.setEnabled(true);
+            option4Button.setEnabled(true);
 
             updateProgressBar();
         } else {
@@ -89,20 +105,43 @@ public class QuizActivity extends AppCompatActivity {
         }
     }
 
-    private void checkAnswer() {
-        int selectedRadioButtonId = optionsRadioGroup.getCheckedRadioButtonId();
-        if (selectedRadioButtonId != -1) {
-            RadioButton selectedRadioButton = findViewById(selectedRadioButtonId);
-            String selectedAnswer = selectedRadioButton.getText().toString();
+    private void setButtonListeners() {
+        View.OnClickListener answerButtonClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Button clickedButton = (Button) v;
+                String selectedAnswer = clickedButton.getText().toString();
+                if (selectedAnswer.equals(answers.get(currentQuestionIndex))) {
+                    clickedButton.setBackgroundColor(ContextCompat.getColor(QuizActivity.this, R.color.correctAnswer));
+                    correctAnswers++;
+                } else {
+                    clickedButton.setBackgroundColor(ContextCompat.getColor(QuizActivity.this, R.color.incorrectAnswer));
+                }
 
-            if (selectedAnswer.equals(answers.get(currentQuestionIndex))) {
-                correctAnswers++;
+                // Disable all buttons after one is clicked to prevent multiple answers
+                option1Button.setEnabled(false);
+                option2Button.setEnabled(false);
+                option3Button.setEnabled(false);
+                option4Button.setEnabled(false);
+
+                // Handler to add some delay before moving to next question
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        currentQuestionIndex++;
+                        displayQuestion();
+                    }
+                }, 1000); // 1 second delay
             }
+        };
 
-            currentQuestionIndex++;
-            displayQuestion();
-        }
+        option1Button.setOnClickListener(answerButtonClickListener);
+        option2Button.setOnClickListener(answerButtonClickListener);
+        option3Button.setOnClickListener(answerButtonClickListener);
+        option4Button.setOnClickListener(answerButtonClickListener);
     }
+
+
 
     private void updateProgressBar() {
         int progress = ((currentQuestionIndex + 1) * 100) / questions.size();
